@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "preparedAt": "2026-08-10",
+  "siteBaseUrl": "https://thefunkybits.github.io/rgm/",
+  "keyId": "rgm-catalog-2026-01",
+  "feeds": {
+    "demo": {
+      "revision": 1,
+      "indexSha256": "bf7c95ab692968ca432d7137063d2aa4e5bfe90d47e93990f0f4a3a4cf6c5b97",
+      "signatureEnvelopeSha256": "cd5eb42f0ad6d6434520d01b059aa787f3fb1b596934ef06232aea1f8469bc2e",
+      "objectCount": 6
+    },
+    "test": {
+      "revision": 1,
+      "indexSha256": "06431dd51e1d03633e90addc062889ae4f1b5adc4f725ea29c23940983b9b01f",
+      "signatureEnvelopeSha256": "e6b76a21a67676bd75d80232a31757073393c701dfccf2e062a997de3ee6121e",
+      "objectCount": 3
+    }
+  }
+}

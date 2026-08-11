@@ -1,0 +1,46 @@
+{
+    "schemaVersion": 2,
+    "catalogId": "demo",
+    "catalogName": "RGM Demo",
+    "revision": 1,
+    "generatedAt": "2026-08-11T00:00:00Z",
+    "minimumAppVersionCode": 2,
+    "files": [
+        {
+            "path": "catalog.json",
+            "objectPath": "objects/sha256/18d0c68089aa39807336847baeb5804af83748379531333e46d2fafa766554e7",
+            "bytes": 1651,
+            "sha256": "18d0c68089aa39807336847baeb5804af83748379531333e46d2fafa766554e7"
+        },
+        {
+            "path": "three-in-a-row/1/profile.json",
+            "objectPath": "objects/sha256/b9beda89448a111f41fdc82574560932703e2a67575d3c123c04308ec7eb366b",
+            "bytes": 1476,
+            "sha256": "b9beda89448a111f41fdc82574560932703e2a67575d3c123c04308ec7eb366b"
+        },
+        {
+            "path": "three-in-a-row/cover.png",
+            "objectPath": "objects/sha256/29e91a64eaba8b94232741f8f0cc632c401cb2ec77551949dec2e815b7f64e1a",
+            "bytes": 35867,
+            "sha256": "29e91a64eaba8b94232741f8f0cc632c401cb2ec77551949dec2e815b7f64e1a"
+        },
+        {
+            "path": "three-in-a-row/gameplay.png",
+            "objectPath": "objects/sha256/93a3f040f22cce6529d2e90ee96620eb45c4f67bc8ca5541d34fd3f0e3ebcfea",
+            "bytes": 38803,
+            "sha256": "93a3f040f22cce6529d2e90ee96620eb45c4f67bc8ca5541d34fd3f0e3ebcfea"
+        },
+        {
+            "path": "three-in-a-row/resolve.json",
+            "objectPath": "objects/sha256/c55403c79c38c9f94bde8f68bd73e23e0bc082175af5c83af45cafeef6c1aa2f",
+            "bytes": 793,
+            "sha256": "c55403c79c38c9f94bde8f68bd73e23e0bc082175af5c83af45cafeef6c1aa2f"
+        },
+        {
+            "path": "three-in-a-row/statistics.png",
+            "objectPath": "objects/sha256/bc466bbb0a391d12a4a053553e417d4eee0f4be890b8ac06ba00d557d52a95cf",
+            "bytes": 52523,
+            "sha256": "bc466bbb0a391d12a4a053553e417d4eee0f4be890b8ac06ba00d557d52a95cf"
+        }
+    ]
+}

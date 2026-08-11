@@ -1,0 +1,47 @@
+{
+    "schemaVersion": 1,
+    "titles": [
+        {
+            "id": "three-in-a-row",
+            "name": "Three in a Row",
+            "releaseDate": "2026",
+            "publisher": "The Funky Bits",
+            "developer": "The Funky Bits",
+            "summary": "Play a quick game of tic-tac-toe against a tactical computer opponent.",
+            "description": "Place three marks in a row before the computer does. Play by direct touch or with the arrow keys and Enter, open help with F1, and keep a local record of completed wins, draws, and losses.",
+            "genres": [
+                "Board",
+                "Strategy"
+            ],
+            "languages": [
+                "English"
+            ],
+            "alsoKnownAs": [
+                "Tic-Tac-Toe",
+                "Noughts and Crosses"
+            ],
+            "offers": [],
+            "media": {
+                "cover": "three-in-a-row/cover.png",
+                "gallery": [
+                    {
+                        "kind": "image",
+                        "path": "three-in-a-row/gameplay.png"
+                    },
+                    {
+                        "kind": "image",
+                        "path": "three-in-a-row/statistics.png"
+                    }
+                ]
+            },
+            "versions": [
+                {
+                    "id": "three-in-a-row/1",
+                    "label": "1.0.0",
+                    "profileId": "three-in-a-row/1",
+                    "provenance": "Official first-party release built reproducibly from the published MIT-licensed source."
+                }
+            ]
+        }
+    ]
+}

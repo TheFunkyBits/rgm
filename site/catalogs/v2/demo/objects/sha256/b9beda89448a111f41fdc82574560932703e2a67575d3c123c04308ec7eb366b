@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "three-in-a-row/1",
+  "revision": 1,
+  "titleId": "three-in-a-row",
+  "versionId": "three-in-a-row/1",
+  "authoring": {
+    "author": "The Funky Bits",
+    "updatedAt": "2026-08-10",
+    "maturity": "preview",
+    "notes": "First-party direct-input title. No assists, scenes, targets, or memory inspection."
+  },
+  "core": {
+    "id": "dosbox-pure",
+    "minVersion": "1.0.0",
+    "options": {
+      "dosbox_pure_machine": "svga_s3",
+      "dosbox_pure_memory_size": "16",
+      "dosbox_pure_cycles": "auto",
+      "dosbox_pure_aspect_correction": "true",
+      "dosbox_pure_mouse_input": "direct",
+      "dosbox_pure_savestate": "disabled",
+      "dosbox_pure_menu_time": "0",
+      "dosbox_pure_conf": "inside"
+    },
+    "requiredCapabilities": ["absolutePointer", "keyboardInput"]
+  },
+  "launch": {
+    "mount": { "kind": "zipAsC", "primary": "content.zip" },
+    "entry": { "kind": "executable", "path": "THREE.COM" },
+    "autoStart": true
+  },
+  "display": {
+    "baseGeometry": { "width": 320, "height": 200 },
+    "pixelAspect": 1.2,
+    "scaling": "integerThenLinear",
+    "sampling": "nearest",
+    "preferredOrientation": "landscape"
+  },
+  "input": { "defaultPointerMode": "direct", "availableAssists": [] },
+  "saveSpec": {
+    "artifacts": [
+      { "kind": "coreSaveArchive", "path": "saves/content.pure.zip", "required": true }
+    ],
+    "flushPolicy": { "onExit": true }
+  }
+}

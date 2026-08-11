@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Privacy policy for the Retro Games Mobile Android application.">
+  <title>Privacy policy · Retro Games Mobile</title>
+  <link rel="stylesheet" href="/rgm/assets/styles.css">
+</head>
+<body>
+  <header class="site-header"><div class="header-inner">
+    <a class="wordmark" href="/rgm/">Retro Games Mobile</a>
+    <nav aria-label="Main navigation"><a href="/rgm/titles/three-in-a-row/">Three in a Row</a><a href="/rgm/review/">Review guide</a><a href="/rgm/trust/">Catalog trust</a><a href="/rgm/privacy/" aria-current="page">Privacy</a></nav>
+  </div></header>
+  <main class="page">
+    <p class="kicker">Effective August 10, 2026</p>
+    <h1>Privacy policy</h1>
+
+    <h2>Summary</h2>
+    <p>Retro Games Mobile is provided by The Funky Bits. The Android application <code>dev.thefunkybits.rgm</code> does not collect, sell, or share personal data. It has no account system, analytics, advertising, cloud synchronization, or application-operated server.</p>
+
+    <h2>Catalog network requests</h2>
+    <p>RGM uses the internet to retrieve public catalog indexes, detached signatures, adaptation Profiles, recognition rules, and catalog media over HTTPS. The default catalog is hosted on GitHub Pages. You may enter any public HTTPS transport URL, but RGM activates only catalogs whose exact index bytes verify under a global RGM public key pinned in the app.</p>
+    <p>The operator of any catalog host you choose may receive ordinary request information such as your IP address, request time, requested path, and RGM version in the user-agent string. RGM does not add an account identifier, advertising identifier, selected game files, installed content, saves, settings, or play history to these requests. GitHub describes its processing for the default host in the <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement">GitHub Privacy Statement</a>.</p>
+
+    <h2>Files you select</h2>
+    <p>You choose a folder containing software files that you lawfully possess. Android grants the app read access to that selected location. RGM reads those files locally to identify a supported release and creates a private installation in the app's local storage. The selected and installed files are not uploaded by RGM.</p>
+    <p>The Android folder-access grant may remain until you revoke it in system settings, clear the app's data, or uninstall the app.</p>
+
+    <h2>Local data, retention, and deletion</h2>
+    <p>Verified catalog cache files, installed content, emulator configuration, local saves, settings, and play history remain on your device. RGM retains them until an applicable in-app removal or reset action, clearing app data, or uninstalling the app. RGM excludes its app-private data from Android backup and device transfer.</p>
+
+    <h2>Security</h2>
+    <p>Catalog transport requires HTTPS. Catalog indexes are verified with pinned Ed25519 public keys before any downloaded metadata or media becomes active. Catalog files are checked against signed SHA-256 sizes and hashes, then stored in Android app-private storage. The last verified catalog remains available offline.</p>
+
+    <h2>Notifications</h2>
+    <p>RGM may request Android notification permission so it can report the result of a local installation after you leave the app. The notification is generated on your device and contains no advertising or remote tracking.</p>
+
+    <h2>Google Play</h2>
+    <p>Google Play may process information independently when distributing the app, checking integrity, or reporting crashes according to Google's terms and privacy policy. RGM does not receive that information through an application analytics service.</p>
+
+    <h2>This website</h2>
+    <p>GitHub Pages hosts this static website and its catalog files. The site contains no RGM analytics, tracking scripts, forms, iframes, or remote media.</p>
+
+    <h2>Children</h2>
+    <p>RGM is not directed to children and does not knowingly collect information from anyone, including children.</p>
+
+    <h2>Changes</h2>
+    <p>If a later release changes data handling, this policy and applicable store disclosures will be updated before that behavior is distributed.</p>
+
+    <h2>Contact</h2>
+    <p>Privacy and support questions: <a href="mailto:thefunkybits@gmail.com">thefunkybits@gmail.com</a></p>
+    <footer><a href="/rgm/">Retro Games Mobile home</a></footer>
+  </main>
+</body>
+</html>

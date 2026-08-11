@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Google Play review guide for Retro Games Mobile and its first-party Three in a Row demo.">
+  <title>Review guide · Retro Games Mobile</title>
+  <link rel="stylesheet" href="/rgm/assets/styles.css">
+</head>
+<body>
+  <header class="site-header"><div class="header-inner">
+    <a class="wordmark" href="/rgm/">Retro Games Mobile</a>
+    <nav aria-label="Main navigation"><a href="/rgm/titles/three-in-a-row/">Three in a Row</a><a href="/rgm/review/" aria-current="page">Review guide</a><a href="/rgm/trust/">Catalog trust</a><a href="/rgm/privacy/">Privacy</a></nav>
+  </div></header>
+  <main class="page">
+    <p class="kicker">Package dev.thefunkybits.rgm</p>
+    <h1>Review guide</h1>
+    <p class="lede">A direct path through the signed demo catalog and the rights-cleared game shown in the store listing.</p>
+
+    <div class="notice"><strong>Network is required on first launch.</strong> RGM verifies and caches the signed demo catalog. Later launches can use the last verified copy offline.</div>
+
+    <h2>Install the demo game</h2>
+    <ol>
+      <li>Launch RGM with internet access and wait for <strong>Three in a Row</strong> to appear.</li>
+      <li><a href="/rgm/artifacts/three-in-a-row/1/files/three-in-a-row-1.0.0-dos.zip">Download the DOS package</a> and extract it with the device's Files app.</li>
+      <li>Open Three in a Row in RGM, choose <strong>Install</strong>, and select the extracted folder.</li>
+      <li>After local recognition completes, choose <strong>Play</strong>.</li>
+    </ol>
+
+    <h2>Controls to verify</h2>
+    <ul>
+      <li>Tap an empty board cell to place an X.</li>
+      <li>Use the arrow keys and Enter when a hardware keyboard is available.</li>
+      <li>Open Help with F1, or use the on-screen Help control.</li>
+      <li>Finish a round and start another; the match ledger persists locally.</li>
+    </ul>
+
+    <h2>Content and rights</h2>
+    <p>Three in a Row is first-party software by The Funky Bits, published under the MIT License. Its executable, source, checksums, and provenance are available from the <a href="/rgm/artifacts/three-in-a-row/1/">immutable artifact page</a>. RGM does not download or distribute third-party game binaries.</p>
+
+    <h2>Catalog identity</h2>
+    <p>The default endpoint is <code>https://thefunkybits.github.io/rgm/catalogs/v2/demo/index.json</code>. The app verifies the exact index bytes with its pinned Ed25519 key, verifies each object by size and SHA-256, and activates the result atomically.</p>
+    <footer>Support: <a href="mailto:thefunkybits@gmail.com">thefunkybits@gmail.com</a></footer>
+  </main>
+</body>
+</html>

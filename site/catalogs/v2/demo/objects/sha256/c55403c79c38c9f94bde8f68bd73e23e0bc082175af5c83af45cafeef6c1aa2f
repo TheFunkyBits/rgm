@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "titleId": "three-in-a-row",
+  "releaseYear": 2026,
+  "contentFilter": {
+    "include": [
+      "three.com"
+    ]
+  },
+  "significance": {
+    "include": [
+      "three.com"
+    ],
+    "maxFiles": 1
+  },
+  "versions": [
+    {
+      "id": "three-in-a-row/1",
+      "label": "1.0.0",
+      "profileId": "three-in-a-row/1",
+      "provenance": "Official first-party release built reproducibly from the published MIT-licensed source.",
+      "rules": {
+        "required": [
+          {
+            "path": "three.com",
+            "exists": true,
+            "digest": "sha256:21c7bca12ddcb236d5d56ea26a8f707711151cab334c9d73ae7383cc603f8d79",
+            "weight": 100
+          }
+        ]
+      },
+      "threshold": 100
+    }
+  ]
+}

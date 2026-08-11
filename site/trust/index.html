@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Pinned signing authorities and trust policy for Retro Games Mobile catalogs.">
+  <title>Catalog trust · Retro Games Mobile</title>
+  <link rel="stylesheet" href="/rgm/assets/styles.css">
+</head>
+<body>
+  <header class="site-header"><div class="header-inner">
+    <a class="wordmark" href="/rgm/">Retro Games Mobile</a>
+    <nav aria-label="Main navigation"><a href="/rgm/titles/three-in-a-row/">Three in a Row</a><a href="/rgm/review/">Review guide</a><a href="/rgm/trust/" aria-current="page">Catalog trust</a><a href="/rgm/privacy/">Privacy</a></nav>
+  </div></header>
+  <main class="page">
+    <p class="kicker">RGM catalog authority</p>
+    <h1>Catalog trust</h1>
+    <p class="lede">Any public HTTPS location may carry a catalog. Authority comes only from a globally pinned RGM Ed25519 key signing its exact index bytes.</p>
+
+    <h2>Active signing key</h2>
+    <dl class="facts">
+      <div class="fact"><dt>Key ID</dt><dd><code>rgm-catalog-2026-01</code></dd></div>
+      <div class="fact"><dt>Algorithm</dt><dd>Ed25519, raw 32-byte public key</dd></div>
+      <div class="fact"><dt>Signature prefix</dt><dd>None</dd></div>
+    </dl>
+    <p><a href="catalog-keys.json">Download the machine-readable public-key document</a>.</p>
+
+    <h2>Published feeds</h2>
+    <ul class="link-list">
+      <li><a href="/rgm/catalogs/v2/demo/index.json"><span><code>demo</code></span><small>Default · Three in a Row</small></a></li>
+      <li><a href="/rgm/catalogs/v2/test/index.json"><span><code>test</code></span><small>Text-only compatibility data</small></a></li>
+    </ul>
+
+    <h2>Verification policy</h2>
+    <ol>
+      <li>Require public HTTPS with no credentials, query, fragment, custom port, or private/local destination.</li>
+      <li>Fetch <code>index.json</code> and its sibling <code>index.signatures.json</code>.</li>
+      <li>Verify a signature over the exact index bytes against the app's global RGM key set.</li>
+      <li>Use the signed catalog identity only for cache, rollback, and installation namespaces.</li>
+      <li>Reject revision rollback or changed bytes at an already accepted revision.</li>
+      <li>Fetch same-origin content-addressed objects and verify signed byte sizes and SHA-256 hashes.</li>
+      <li>Activate a complete generation atomically; retain the last verified generation on failure.</li>
+    </ol>
+
+    <p>The published endpoints above are conveniences, not an allowlist. A future or mirrored catalog needs no app update when one of the globally pinned keys signs it.</p>
+
+    <h2>Key rotation</h2>
+    <p>A client update may pin an old and a new public key concurrently. Feeds are then signed by both keys before a later client update removes the retired key. Private keys are kept outside source repositories and publication output.</p>
+    <footer><a href="/rgm/spec/catalog-v2/">Read the catalog v2 specification</a></footer>
+  </main>
+</body>
+</html>
