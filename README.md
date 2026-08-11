@@ -11,3 +11,7 @@ Signed feeds are generated from the private content repository; private signing 
 ```
 
 The site contains no analytics, tracking scripts, forms, iframes, or remote media.
+
+The frozen feed revisions and hashes are recorded in `publication-lock.json`. Completed Pages,
+live-byte, signature, and Android cache verification evidence is recorded in
+`deployment-record.json`.
