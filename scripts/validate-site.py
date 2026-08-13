@@ -30,6 +30,34 @@ REMOTE_MEDIA = re.compile(
     re.IGNORECASE,
 )
 LOCAL_REFERENCE = re.compile(r"(?:href|src)=\"([^\"]+)\"")
+TEST_CATALOG_PATHS = (
+    "catalog.json",
+    "moo1/1.3/profile.json",
+    "moo1/cover.png",
+    "moo1/intro.mp4",
+    "moo1/resolve.json",
+    "moo1/star-map.png",
+    "moo1/tech-breakthrough.png",
+)
+TEST_CATALOG_OFFERS = [
+    {
+        "provider": "GOG",
+        "url": "https://www.gog.com/game/master_of_orion_1_2",
+        "disclosureRequired": False,
+    }
+]
+TEST_CATALOG_MEDIA = {
+    "cover": "moo1/cover.png",
+    "gallery": [
+        {
+            "kind": "video",
+            "path": "moo1/intro.mp4",
+            "poster": "moo1/cover.png",
+        },
+        {"kind": "image", "path": "moo1/star-map.png"},
+        {"kind": "image", "path": "moo1/tech-breakthrough.png"},
+    ],
+}
 
 
 def fail(message: str) -> None:
@@ -82,6 +110,23 @@ def verify_signature(openssl: str, public_key: bytes, payload: Path, signature: 
             fail(f"Ed25519 verification failed for {payload}: {result.stderr.strip()}")
 
 
+def validate_test_catalog(payloads: dict[str, bytes]) -> None:
+    if tuple(payloads) != TEST_CATALOG_PATHS:
+        fail("test: logical path inventory differs from the MOO1 media contract")
+    try:
+        catalog = json.loads(payloads["catalog.json"].decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as error:
+        fail(f"test: catalog.json is invalid: {error}")
+    titles = catalog.get("titles")
+    if not isinstance(titles, list) or len(titles) != 1 or titles[0].get("id") != "moo1":
+        fail("test: catalog must contain only MOO1")
+    title = titles[0]
+    if title.get("offers") != TEST_CATALOG_OFFERS:
+        fail("test: MOO1 offer differs from the approved GOG offer")
+    if title.get("media") != TEST_CATALOG_MEDIA:
+        fail("test: MOO1 media differs from the approved cover and gallery order")
+
+
 def validate_feed(site: Path, feed_name: str, openssl: str, keys: dict[str, bytes]) -> dict:
     feed = site / "catalogs" / "v2" / feed_name
     index_path = feed / "index.json"
@@ -119,25 +164,24 @@ def validate_feed(site: Path, feed_name: str, openssl: str, keys: dict[str, byte
         fail(f"{feed_name}: logical path inventory is empty, unsorted, or duplicated")
 
     referenced_objects = set()
+    payloads = {}
     for record in files:
+        logical_path = record.get("path")
         object_path = record.get("objectPath", "")
         expected_hash = record.get("sha256", "")
         if object_path != f"objects/sha256/{expected_hash}":
-            fail(f"{feed_name}: object path is not content-addressed for {record.get('path')}")
+            fail(f"{feed_name}: object path is not content-addressed for {logical_path}")
         object_file = feed / object_path
         if not object_file.is_file():
             fail(f"{feed_name}: missing {object_path}")
         data = object_file.read_bytes()
         if len(data) != record.get("bytes") or sha256(data) != expected_hash:
-            fail(f"{feed_name}: object size or hash differs for {record.get('path')}")
+            fail(f"{feed_name}: object size or hash differs for {logical_path}")
         referenced_objects.add(object_file.resolve())
+        payloads[logical_path] = data
 
-        if feed_name == "test":
-            if not record.get("path", "").endswith(".json"):
-                fail(f"test: non-JSON logical path {record.get('path')}")
-            text = data.decode("utf-8")
-            if "http://" in text or "https://" in text:
-                fail(f"test: URL found in {record.get('path')}")
+    if feed_name == "test":
+        validate_test_catalog(payloads)
 
     object_root = feed / "objects" / "sha256"
     actual_objects = {path.resolve() for path in object_root.iterdir() if path.is_file()}
