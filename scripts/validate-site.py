@@ -4,6 +4,7 @@ import argparse
 import base64
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -108,6 +109,21 @@ def verify_signature(openssl: str, public_key: bytes, payload: Path, signature: 
         )
         if result.returncode != 0:
             fail(f"Ed25519 verification failed for {payload}: {result.stderr.strip()}")
+
+
+def find_openssl() -> str | None:
+    on_path = shutil.which("openssl")
+    if on_path:
+        return on_path
+    if os.name != "nt":
+        return None
+    for variable in ("ProgramFiles", "ProgramFiles(x86)"):
+        root = os.environ.get(variable)
+        if root:
+            candidate = Path(root) / "Git" / "usr" / "bin" / "openssl.exe"
+            if candidate.is_file():
+                return str(candidate)
+    return None
 
 
 def validate_test_catalog(payloads: dict[str, bytes]) -> None:
@@ -273,7 +289,7 @@ def validate_site(site: Path, openssl: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("site", type=Path)
-    parser.add_argument("--openssl", default=shutil.which("openssl"))
+    parser.add_argument("--openssl", default=find_openssl())
     arguments = parser.parse_args()
     if not arguments.openssl:
         fail("OpenSSL is required for Ed25519 verification")
