@@ -3,6 +3,7 @@
 import copy
 import importlib.util
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -73,6 +74,33 @@ class TestMoo1CatalogPolicy(unittest.TestCase):
 
         with self.assertRaisesRegex(SystemExit, "logical path inventory differs"):
             VALIDATOR.validate_test_catalog(payloads)
+
+
+class TestPublicationIdentity(unittest.TestCase):
+    def test_accepts_canonical_site_base_and_schema_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            site = Path(temporary) / "site"
+            for relative, schema_id in VALIDATOR.SCHEMA_IDS.items():
+                path = site / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps({"$id": schema_id}), encoding="utf-8")
+
+            VALIDATOR.validate_publication_identity(
+                site,
+                {"siteBaseUrl": VALIDATOR.SITE_BASE_URL},
+            )
+
+    def test_rejects_retired_site_base_and_root_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            site = Path(temporary) / "site"
+            html = site / "index.html"
+            with self.assertRaisesRegex(SystemExit, "site base URL"):
+                VALIDATOR.validate_publication_identity(
+                    site,
+                    {"siteBaseUrl": "https://thefunkybits.github.io/rgm/"},
+                )
+            with self.assertRaisesRegex(SystemExit, "Unexpected root-relative reference"):
+                VALIDATOR.resolve_local_reference(site, html, "/rgm/privacy/")
 
 
 if __name__ == "__main__":

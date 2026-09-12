@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Version 2 signed external catalog specification for Retro Games Mobile.">
   <title>Catalog v2 specification · Retro Games Mobile</title>
-  <link rel="stylesheet" href="/rgm/assets/styles.css">
+  <link rel="stylesheet" href="/rgm-publication/assets/styles.css">
 </head>
 <body>
   <header class="site-header"><div class="header-inner">
-    <a class="wordmark" href="/rgm/">Retro Games Mobile</a>
-    <nav aria-label="Main navigation"><a href="/rgm/titles/three-in-a-row/">Three in a Row</a><a href="/rgm/review/">Review guide</a><a href="/rgm/trust/">Catalog trust</a><a href="/rgm/privacy/">Privacy</a></nav>
+    <a class="wordmark" href="/rgm-publication/">Retro Games Mobile</a>
+    <nav aria-label="Main navigation"><a href="/rgm-publication/titles/three-in-a-row/">Three in a Row</a><a href="/rgm-publication/review/">Review guide</a><a href="/rgm-publication/trust/">Catalog trust</a><a href="/rgm-publication/privacy/">Privacy</a></nav>
   </div></header>
   <main class="page">
     <p class="kicker">Wire contract · Schema 2</p>
@@ -44,10 +44,10 @@
     <p>Consumers retain a high-water revision per catalog identity. A lower revision is rejected. Reusing an accepted revision with different index bytes is also rejected. Moving the same signed feed between HTTPS origins does not change its identity or grant a new origin signing authority.</p>
 
     <h2>Published public endpoints</h2>
-    <pre><code>https://thefunkybits.github.io/rgm/catalogs/v2/demo/index.json
-https://thefunkybits.github.io/rgm/catalogs/v2/test/index.json</code></pre>
+    <pre><code>https://thefunkybits.github.io/rgm-publication/catalogs/v2/demo/index.json
+  https://thefunkybits.github.io/rgm-publication/catalogs/v2/test/index.json</code></pre>
   <p>These are the first-party default and compatibility feeds, not a location allowlist. The signed <code>catalogId</code> supplies an operational namespace for cache generations, anti-rollback state, and installations.</p>
-    <footer><a href="/rgm/trust/">Pinned keys and rotation policy</a></footer>
+    <footer><a href="/rgm-publication/trust/">Pinned keys and rotation policy</a></footer>
   </main>
 </body>
 </html>

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thefunkybits.github.io/rgm/spec/catalog-v2/signatures.schema.json",
+  "$id": "https://thefunkybits.github.io/rgm-publication/spec/catalog-v2/signatures.schema.json",
   "title": "RGM catalog detached signatures",
   "type": "object",
   "additionalProperties": false,

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thefunkybits.github.io/rgm/spec/catalog-v2/index.schema.json",
+  "$id": "https://thefunkybits.github.io/rgm-publication/spec/catalog-v2/index.schema.json",
   "title": "RGM signed catalog index payload",
   "type": "object",
   "additionalProperties": false,

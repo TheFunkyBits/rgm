@@ -23,6 +23,12 @@ REQUIRED = (
     "catalogs/v2/test/index.signatures.json",
 )
 FEEDS = ("demo", "test")
+SITE_BASE_URL = "https://thefunkybits.github.io/rgm-publication/"
+SITE_BASE_PATH = "/rgm-publication/"
+SCHEMA_IDS = {
+    "spec/catalog-v2/index.schema.json": f"{SITE_BASE_URL}spec/catalog-v2/index.schema.json",
+    "spec/catalog-v2/signatures.schema.json": f"{SITE_BASE_URL}spec/catalog-v2/signatures.schema.json",
+}
 SPKI_ED25519_PREFIX = bytes.fromhex("302a300506032b6570032100")
 PLACEHOLDER = re.compile(r"TODO|TBD|REPLACE|example\.invalid|localhost|C:\\Users\\")
 FORBIDDEN_HTML = re.compile(r"<(?:script|iframe|form)(?:\s|>)", re.IGNORECASE)
@@ -221,17 +227,25 @@ def resolve_local_reference(site: Path, html: Path, reference: str) -> Path | No
     if parsed.scheme or reference.startswith("#") or reference.startswith("mailto:"):
         return None
     clean = parsed.path
-    if clean.startswith("/rgm/"):
-        target = site / clean.removeprefix("/rgm/")
-    elif clean == "/rgm":
+    if clean.startswith(SITE_BASE_PATH):
+        target = site / clean.removeprefix(SITE_BASE_PATH)
+    elif clean == SITE_BASE_PATH.rstrip("/"):
         target = site
     elif clean.startswith("/"):
-        return None
+        fail(f"Unexpected root-relative reference in {html}: {reference}")
     else:
         target = html.parent / clean
     if target.is_dir() or clean.endswith("/"):
         target = target / "index.html"
     return target
+
+
+def validate_publication_identity(site: Path, publication_lock: dict) -> None:
+    if publication_lock.get("siteBaseUrl") != SITE_BASE_URL:
+        fail("Publication lock site base URL is invalid")
+    for relative, expected_id in SCHEMA_IDS.items():
+        if read_json(site / relative).get("$id") != expected_id:
+            fail(f"Published schema id is invalid: {relative}")
 
 
 def validate_site(site: Path, openssl: str) -> None:
@@ -254,6 +268,7 @@ def validate_site(site: Path, openssl: str) -> None:
     publication_lock = read_json(lock_path)
     if publication_lock.get("schemaVersion") != 1:
         fail("Publication lock schema is not 1")
+    validate_publication_identity(site, publication_lock)
     if publication_lock.get("keyId") != key_document.get("keyId"):
         fail("Publication lock key id differs from the published key")
     feed_results = {

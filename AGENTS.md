@@ -1,6 +1,6 @@
 # Repository Agent Guidance
 
-Shared workspace policy: `../.github/copilot-instructions.md`. This file contains only
+Shared workspace policy: `../../.github/copilot-instructions.md`. This file contains only
 public-site ownership and Pages-specific rules.
 
 ## Scope
