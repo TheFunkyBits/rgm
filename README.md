@@ -10,7 +10,8 @@ Signed feeds are generated from the private content repository:
 
 ```text
 cd ../content
-python -m scripts.rgm_content_tools stage-external-catalog --release-candidate=<release-candidate.json> --private-key=<private-key.json> --publication-root=../publication --client-root=../client --java=<java>
+python -m scripts.rgm_content_tools catalog-candidate --release-id=<catalog-release-id> --client-root=../client --publication-root=../publication --java=<java> --git=<git>
+python -m scripts.rgm_content_tools stage-external-catalog --catalog-candidate=<catalog-candidate.json> --private-key=<private-key.json> --publication-root=../publication --client-root=../client --java=<java>
 ```
 
 The site contains no analytics, tracking scripts, forms, iframes, or remote media.
