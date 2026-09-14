@@ -1,16 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thefunkybits.github.io/rgm/spec/catalog-v2/index.schema.json",
-  "title": "RGM signed catalog index payload",
+  "$id": "https://thefunkybits.github.io/rgm/spec/catalog-v4/index.schema.json",
+  "title": "RGM immutable catalog release index",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "catalogId", "catalogName", "revision", "generatedAt", "minimumAppVersionCode", "files"],
+  "required": ["schemaVersion", "catalogVersion", "minimumAppVersionCode", "files"],
   "properties": {
-    "schemaVersion": { "type": "integer", "const": 2 },
-    "catalogId": { "$ref": "#/$defs/slug" },
-    "catalogName": { "type": "string", "minLength": 1, "maxLength": 80 },
-    "revision": { "type": "integer", "minimum": 1 },
-    "generatedAt": { "type": "string", "format": "date-time" },
+    "schemaVersion": { "type": "integer", "const": 4 },
+    "catalogVersion": { "type": "integer", "minimum": 1 },
     "minimumAppVersionCode": { "type": "integer", "minimum": 1 },
     "files": {
       "type": "array",
@@ -20,8 +17,11 @@
     }
   },
   "$defs": {
-    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-    "path": { "type": "string", "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$", "maxLength": 240 },
+    "path": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
+      "maxLength": 240
+    },
     "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "file": {
       "type": "object",

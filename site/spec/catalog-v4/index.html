@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Current immutable catalog release specification for Retro Games Mobile.">
+  <title>Catalog v4 specification · Retro Games Mobile</title>
+  <link rel="stylesheet" href="/rgm/assets/styles.css">
+</head>
+<body>
+  <header class="site-header"><div class="header-inner">
+    <a class="wordmark" href="/rgm/">Retro Games Mobile</a>
+    <nav aria-label="Main navigation"><a href="/rgm/review/">Review guide</a><a href="/rgm/trust/">Catalog trust</a><a href="/rgm/privacy/">Privacy</a></nav>
+  </div></header>
+  <main class="page">
+    <p class="kicker">Wire contract · Schema 4</p>
+    <h1>Immutable catalog v4</h1>
+    <p class="lede">One globally versioned catalog release with exact signed bytes and a bound app identity.</p>
+
+    <div class="actions">
+      <a class="action secondary" href="index.schema.json">Index JSON Schema</a>
+      <a class="action secondary" href="signatures.schema.json">Signature JSON Schema</a>
+      <a class="action secondary" href="binding.schema.json">Binding JSON Schema</a>
+    </div>
+
+    <h2>Release layout</h2>
+    <pre><code>catalog/v&lt;version&gt;/
+├── index.json
+├── index.signatures.json
+└── objects/sha256/&lt;64-lowercase-hex&gt;</code></pre>
+
+    <h2>Identity</h2>
+    <p>The signed index declares a globally unique catalog version, compatibility floor, and sorted content-addressed file inventory. The detached envelope signs the exact index bytes. An app binding pins the immutable index URL, version, key ID, index hash, and envelope hash.</p>
+
+    <h2>Verification</h2>
+    <p>A client verifies the exact index and envelope hashes, one pinned Ed25519 signature, every declared object size and SHA-256, and the complete inventory before activating the release atomically.</p>
+    <footer><a href="/rgm/trust/">Pinned keys and rotation policy</a></footer>
+  </main>
+</body>
+</html>

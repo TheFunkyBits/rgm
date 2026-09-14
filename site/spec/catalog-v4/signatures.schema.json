@@ -1,13 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://thefunkybits.github.io/rgm/spec/catalog-v2/signatures.schema.json",
-  "title": "RGM catalog detached signatures",
+  "$id": "https://thefunkybits.github.io/rgm/spec/catalog-v4/signatures.schema.json",
+  "title": "RGM immutable catalog release signatures",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "catalogId", "manifestSha256", "signatures"],
+  "required": ["schemaVersion", "manifestSha256", "signatures"],
   "properties": {
-    "schemaVersion": { "type": "integer", "const": 1 },
-    "catalogId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "schemaVersion": { "type": "integer", "const": 2 },
     "manifestSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "signatures": {
       "type": "array",

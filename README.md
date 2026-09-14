@@ -1,21 +1,39 @@
 # RGM public site
 
-Static source for `https://thefunkybits.github.io/rgm-publication/`.
+Static source for `https://thefunkybits.github.io/rgm/`.
 
-It hosts the public RGM privacy policy, reviewer guidance, Three in a Row artifacts and provenance, catalog trust/specification pages, and generated signed feeds under `site/catalogs/v2/`.
+It hosts the public RGM privacy policy, reviewer guidance, catalog trust/specification pages, and generated signed releases under `site/catalog/vN/`.
 
 Shared workspace policy is in [the workspace instructions](../../.github/copilot-instructions.md).
 
-Signed feeds are generated from the private content repository:
+Catalog candidates and signed stages are created by the private content repository; this repository
+owns promotion into its reviewed worktree:
 
 ```text
-cd ../content
-python -m scripts.rgm_content_tools catalog-candidate --release-id=<catalog-release-id> --client-root=../client --publication-root=../publication --java=<java> --git=<git>
-python -m scripts.rgm_content_tools stage-external-catalog --catalog-candidate=<catalog-candidate.json> --private-key=<private-key.json> --publication-root=../publication --client-root=../client --java=<java>
+cd ../rgm-content
+python -m scripts.rgm_content_tools catalog-candidate --catalog-release=../rgm/catalog-requests/vN.json --minimum-app-version-code=<n> --client-root=../rgm-client --publication-root=../rgm --java=<java> --git=<git>
+python -m scripts.rgm_content_tools stage-external-catalog --catalog-candidate=<catalog-candidate.json> --private-key=<private-key.json> --publication-root=../rgm --client-root=../rgm-client --java=<java>
+cd ../rgm
+python -m scripts.rgm_publication_tools promote-external-catalog --stage-directory=<catalog-stage> --catalog-candidate=<catalog-candidate.json> --publication-root=. --client-root=../rgm-client --java=<java> --git=<git>
 ```
 
 The site contains no analytics, tracking scripts, forms, iframes, or remote media.
 
-The frozen feed revisions and hashes are recorded in `publication-lock.json`. Completed Pages,
-live-byte, signature, and Android cache verification evidence is recorded in
-`deployment-record.json`.
+Current immutable release identities are recorded at `catalog-releases/vN.json`. Historical
+catalog evidence is retained under `catalog-history/`; retired root records are recoverable from
+the external cutover history index and are not current release inputs.
+
+After a source record and catalog tree are committed and successfully deployed, a separate
+`deployment-receipts/vN.json` records the deployed source commit, Pages workflow, and direct
+byte-equality result. Receipts are never created before deployment and do not modify release
+records. From a clean checkout at that deployed source commit, record the observed successful
+workflow and direct byte comparison:
+
+```text
+cd ../rgm-client
+java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain :tools:catalog-publisher:run --args="record-deployment-receipt --publication=../rgm --public-key=../rgm/site/trust/catalog-keys.json --git=<git> --catalog-version=<n> --source-commit=<commit> --workflow-run-id=<n> --created-at=<instant> --completed-at=<instant> --served-file-count=<n> --byte-equality-verified=true" --no-daemon --console=plain
+```
+
+Commit only that receipt separately, then use `verify-deployment-receipt` against the committed
+file. The recorder derives the receipt path and release-record hash from the catalog version and
+refuses an existing receipt.

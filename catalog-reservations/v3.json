@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "catalogVersion": 3,
+  "state": "reserved",
+  "reason": "retained-schema-3-production-key-signed-staging",
+  "indexSha256": "84abe2112a98d85af7fa761f9cc2eef836b87e2ae59310d5c3df2402720f760c",
+  "signatureEnvelopeSha256": "63357c75406c16571c051fa0efd94b8630ca2487511265562c75276fbb780c5f"
+}

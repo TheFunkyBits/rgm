@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 2,
+  "kind": "legacy-catalog-evidence",
+  "legacyCatalogId": "test",
+  "legacyRevision": 2,
+  "catalogPath": "catalog/v2",
+  "indexSchemaVersion": 2,
+  "keyId": "rgm-catalog-2026-01",
+  "indexSha256": "f55a92d339d06af97ca059cd89a95b66928edf2da9f6f69297bb5f831d9da7ac",
+  "signatureEnvelopeSha256": "3bd76aa5e6aab9e7644d684683eca336f2b58aaea22bec846b20f5f0ed52380a",
+  "files": [
+    {
+      "path": "catalog.json",
+      "objectPath": "objects/sha256/fcf727a0ec5505d3ec83f1606cbbb799b63e13e3db684ab971b2aa335477a9f0",
+      "bytes": 2210,
+      "sha256": "fcf727a0ec5505d3ec83f1606cbbb799b63e13e3db684ab971b2aa335477a9f0"
+    },
+    {
+      "path": "moo1/1.3/profile.json",
+      "objectPath": "objects/sha256/81f77246272e5f18d824bb139a3ba22b2b662787106fec325055cdaf4dbefcb2",
+      "bytes": 39564,
+      "sha256": "81f77246272e5f18d824bb139a3ba22b2b662787106fec325055cdaf4dbefcb2"
+    },
+    {
+      "path": "moo1/cover.png",
+      "objectPath": "objects/sha256/90487fbae03cd94876b9555ada85947c572ad1f15c783f249551965b70fdf872",
+      "bytes": 22423,
+      "sha256": "90487fbae03cd94876b9555ada85947c572ad1f15c783f249551965b70fdf872"
+    },
+    {
+      "path": "moo1/intro.mp4",
+      "objectPath": "objects/sha256/dece28149bb9db4b4e6e753f432d80cd67985c58512ca3c5af3b4cd9d3ac296b",
+      "bytes": 6400559,
+      "sha256": "dece28149bb9db4b4e6e753f432d80cd67985c58512ca3c5af3b4cd9d3ac296b"
+    },
+    {
+      "path": "moo1/resolve.json",
+      "objectPath": "objects/sha256/091e9d235e794a4259ba73ca24b7f32314974cf585a6fa3321dee69531afc887",
+      "bytes": 1150,
+      "sha256": "091e9d235e794a4259ba73ca24b7f32314974cf585a6fa3321dee69531afc887"
+    },
+    {
+      "path": "moo1/star-map.png",
+      "objectPath": "objects/sha256/6fce1d09c5f0ea46bf4bab5a21d3addb3ce0d88c11c0858a4800b396854be29c",
+      "bytes": 11147,
+      "sha256": "6fce1d09c5f0ea46bf4bab5a21d3addb3ce0d88c11c0858a4800b396854be29c"
+    },
+    {
+      "path": "moo1/tech-breakthrough.png",
+      "objectPath": "objects/sha256/7031e0d710fe8adcbfab216589c3bdcd967844e5dcd92b20205d976f8c3a9ea1",
+      "bytes": 22419,
+      "sha256": "7031e0d710fe8adcbfab216589c3bdcd967844e5dcd92b20205d976f8c3a9ea1"
+    }
+  ],
+  "minimumAppVersionCode": 2,
+  "contentCommit": "f728425e6bdb5937bae950e59c635d4ec899c811",
+  "publisherCommit": "1f6bd8e16e64f5786b325990393387d6587f818a",
+  "publicationCommit": "7bbe0c57ed38ad32635954ab1d66eb3ec62e28bc",
+  "historicalSource": {
+    "commit": "7bbe0c57ed38ad32635954ab1d66eb3ec62e28bc",
+    "path": "site/catalogs/v2/test",
+    "tree": "9538a921162a1699982b9c3a832e2e44d0103b07"
+  }
+}

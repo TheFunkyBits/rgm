@@ -2,3 +2,5 @@
 *.png binary
 *.zip binary
 site/catalogs/v2/** binary
+site/catalogs/test/v*/** binary
+site/catalog/** binary

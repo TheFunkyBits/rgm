@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thefunkybits.github.io/rgm/spec/catalog-v4/binding.schema.json",
+  "title": "RGM exact immutable catalog release binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "indexUrl", "catalogVersion", "keyId", "indexSha256", "signatureEnvelopeSha256"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 2 },
+    "indexUrl": {
+      "type": "string",
+      "pattern": "^https://thefunkybits\\.github\\.io/rgm/catalog/v[1-9][0-9]*/index\\.json$"
+    },
+    "catalogVersion": { "type": "integer", "minimum": 1 },
+    "keyId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$" },
+    "indexSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signatureEnvelopeSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}
