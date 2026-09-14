@@ -1,0 +1,64 @@
+{
+  "canonicalPath": "catalog/v4",
+  "catalogCandidateSha256": "d5da26d37c3bc29be5bd1e30e2a8a30c6359409feb9e565d664c0b678d1e0f80",
+  "catalogVersion": 4,
+  "contentCommit": "f2fd28f889a0787029dbe5feb0c7e759eb41dbdf",
+  "files": [
+    {
+      "bytes": 2165,
+      "objectPath": "objects/sha256/505efda03760b92e1b1fd76ef8a751885b54de94d6242008c81efed3c45eebfc",
+      "path": "catalog.json",
+      "sha256": "505efda03760b92e1b1fd76ef8a751885b54de94d6242008c81efed3c45eebfc"
+    },
+    {
+      "bytes": 226262,
+      "objectPath": "objects/sha256/49527cec782f7033279023816af6909591ac7220de3399888d08f3cd0d38bd40",
+      "path": "moo1/1.3/profile.json",
+      "sha256": "49527cec782f7033279023816af6909591ac7220de3399888d08f3cd0d38bd40"
+    },
+    {
+      "bytes": 22423,
+      "objectPath": "objects/sha256/90487fbae03cd94876b9555ada85947c572ad1f15c783f249551965b70fdf872",
+      "path": "moo1/cover.png",
+      "sha256": "90487fbae03cd94876b9555ada85947c572ad1f15c783f249551965b70fdf872"
+    },
+    {
+      "bytes": 6400559,
+      "objectPath": "objects/sha256/dece28149bb9db4b4e6e753f432d80cd67985c58512ca3c5af3b4cd9d3ac296b",
+      "path": "moo1/intro.mp4",
+      "sha256": "dece28149bb9db4b4e6e753f432d80cd67985c58512ca3c5af3b4cd9d3ac296b"
+    },
+    {
+      "bytes": 1118,
+      "objectPath": "objects/sha256/564bb2d0a99df75e2cba9da16898be9e8eb9427fef1b4c27b42000903c68f0e0",
+      "path": "moo1/resolve.json",
+      "sha256": "564bb2d0a99df75e2cba9da16898be9e8eb9427fef1b4c27b42000903c68f0e0"
+    },
+    {
+      "bytes": 11147,
+      "objectPath": "objects/sha256/6fce1d09c5f0ea46bf4bab5a21d3addb3ce0d88c11c0858a4800b396854be29c",
+      "path": "moo1/star-map.png",
+      "sha256": "6fce1d09c5f0ea46bf4bab5a21d3addb3ce0d88c11c0858a4800b396854be29c"
+    },
+    {
+      "bytes": 22419,
+      "objectPath": "objects/sha256/7031e0d710fe8adcbfab216589c3bdcd967844e5dcd92b20205d976f8c3a9ea1",
+      "path": "moo1/tech-breakthrough.png",
+      "sha256": "7031e0d710fe8adcbfab216589c3bdcd967844e5dcd92b20205d976f8c3a9ea1"
+    }
+  ],
+  "indexSchemaVersion": 4,
+  "indexSha256": "e764de53f2315afafb858511ac51154cb36af017560421b893361bb6c84bc608",
+  "indexUrl": "https://thefunkybits.github.io/rgm/catalog/v4/index.json",
+  "keyId": "rgm-catalog-2026-01",
+  "minimumAppVersionCode": 7,
+  "publicationCommit": "76c6d17e9530ee063193410128b6ce737e00c367",
+  "publisherCommit": "af31bf5bbe88e4c0c6f140f316c2a9d1551b95f9",
+  "schemaVersion": 3,
+  "signatureEnvelopeSha256": "3bdd66a1f78ef292886bc968f326f0c5aebae518dfc5c96bdef5bdf769341a86",
+  "tagNames": {
+    "content": "catalog/v4-content",
+    "publisher": "catalog/v4-publisher",
+    "release": "catalog/v4"
+  }
+}

@@ -1,0 +1,11 @@
+{
+    "schemaVersion": 2,
+    "manifestSha256": "e764de53f2315afafb858511ac51154cb36af017560421b893361bb6c84bc608",
+    "signatures": [
+        {
+            "algorithm": "ed25519",
+            "keyId": "rgm-catalog-2026-01",
+            "value": "P4nygbOSGnXX_OWGQ3xDjbvTSxiisgTHBgdr1oCJ_yYZjVAb1COtPK6_-zsifSBkLfxBQGR_9OYbM9-yIZUTAA"
+        }
+    ]
+}
