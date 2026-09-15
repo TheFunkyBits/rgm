@@ -195,6 +195,30 @@ class ValidateCurrentTreeTest(unittest.TestCase):
         with self.assertRaisesRegex(VALIDATOR.CurrentTreeError, "retired-privacy"):
             self.validate()
 
+    def test_prohibited_short_repository_leaves_are_rejected(self) -> None:
+        for leaf in VALIDATOR.PROHIBITED_SHORT_LEAVES:
+            with self.subTest(leaf=leaf):
+                path = self.fixture.container / leaf
+                path.mkdir()
+
+                with self.assertRaisesRegex(
+                    VALIDATOR.CurrentTreeError,
+                    f"Prohibited short repository leaf exists: .*{leaf}",
+                ):
+                    self.validate()
+
+                path.rmdir()
+
+    def test_non_directory_prohibited_short_repository_leaf_is_rejected(self) -> None:
+        path = self.fixture.container / "client"
+        path.write_text("stale", encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            VALIDATOR.CurrentTreeError,
+            "Prohibited short repository leaf exists: .*client",
+        ):
+            self.validate()
+
     def test_final_public_origin_is_checked_on_demand(self) -> None:
         root = self.fixture.repository("rgm")
         self.fixture.initialize_git(root)

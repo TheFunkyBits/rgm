@@ -24,6 +24,7 @@ REPOSITORY_LEAVES = (
     ("rgm-docs", "rgm-docs"),
 )
 OPTIONAL_PRIVACY_LEAF = ("privacy", "privacy")
+PROHIBITED_SHORT_LEAVES = ("client", "content", "docs", "publication", "tools")
 WORKSPACE_FILES = (
     Path(".github/copilot-instructions.md"),
     Path(".vscode/tasks.json"),
@@ -134,6 +135,7 @@ def require_file(path: Path, label: str) -> Path:
 def canonical_roots(workspace_root: Path) -> tuple[Path, list[RepositoryRoot]]:
     workspace = require_directory(workspace_root, "Workspace root")
     container = require_directory(workspace / "rgm", "RGM container")
+    require_no_prohibited_short_leaves(container)
     roots = [
         RepositoryRoot(name, require_directory(container / leaf, f"Repository {name}"))
         for name, leaf in REPOSITORY_LEAVES
@@ -148,6 +150,13 @@ def canonical_roots(workspace_root: Path) -> tuple[Path, list[RepositoryRoot]]:
             )
         )
     return workspace, roots
+
+
+def require_no_prohibited_short_leaves(container: Path) -> None:
+    for leaf in PROHIBITED_SHORT_LEAVES:
+        path = container / leaf
+        if os.path.lexists(path):
+            raise CurrentTreeError(f"Prohibited short repository leaf exists: {path}")
 
 
 def read_allowlist(path: Path, roots: dict[str, RepositoryRoot]) -> dict[tuple[str, str], HistoricalEntry]:
