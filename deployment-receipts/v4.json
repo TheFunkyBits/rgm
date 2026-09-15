@@ -1,0 +1,17 @@
+{
+    "schemaVersion": 2,
+    "catalogVersion": 4,
+    "releaseRecordSha256": "d4c44c2d768aa6c3119b675fcabbbbf85e1c79d09304ed0c9c010d7cd3cd974c",
+    "sourceCommit": "261a43213f61649e2f764016280014aca6b2e8a7",
+    "site": {
+        "repository": "https://github.com/TheFunkyBits/rgm",
+        "pagesUrl": "https://thefunkybits.github.io/rgm/",
+        "workflowRunId": 34927352071,
+        "workflowUrl": "https://github.com/TheFunkyBits/rgm/actions/runs/34927352071",
+        "createdAt": "2026-09-15T04:03:47Z",
+        "completedAt": "2026-09-15T04:04:31Z",
+        "conclusion": "success",
+        "servedFileCount": 9,
+        "byteEqualityVerified": true
+    }
+}
