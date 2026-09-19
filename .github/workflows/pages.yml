@@ -1,16 +1,6 @@
 name: Deploy RGM public site
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'site/**'
-      - 'catalog-history/**'
-      - 'catalog-reservations/**'
-      - 'scripts/validate-site.py'
-      - 'scripts/test_validate_site.py'
-      - 'scripts/rgm_publication_tools/**'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:

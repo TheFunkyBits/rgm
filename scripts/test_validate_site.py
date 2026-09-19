@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import copy
+import hashlib
 import importlib.util
 import json
 import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -147,72 +149,6 @@ class TestPublicationIdentity(unittest.TestCase):
             path.write_text(json.dumps(document), encoding="utf-8")
 
 
-class TestLegacyCatalogRecord(unittest.TestCase):
-    def record(self) -> dict:
-        return {
-            "schemaVersion": 2,
-            "kind": "legacy-catalog-evidence",
-            "legacyCatalogId": "test",
-            "legacyRevision": 2,
-            "catalogPath": "catalog/v2",
-            "indexSchemaVersion": 2,
-            "keyId": "test-key",
-            "indexSha256": "1" * 64,
-            "signatureEnvelopeSha256": "2" * 64,
-            "files": [
-                {
-                    "path": "catalog.json",
-                    "objectPath": "objects/sha256/3" + "3" * 63,
-                    "bytes": 1,
-                    "sha256": "3" * 64,
-                }
-            ],
-            "minimumAppVersionCode": 2,
-            "contentCommit": "4" * 40,
-            "publisherCommit": "5" * 40,
-            "publicationCommit": "6" * 40,
-            "historicalSource": {
-                "commit": "6" * 40,
-                "path": "site/catalogs/v2/test",
-                "tree": "7" * 40,
-            },
-        }
-
-    def test_accepts_strict_legacy_catalog_record(self) -> None:
-        record = self.record()
-
-        self.assertEqual(record, VALIDATOR.validate_legacy_record(record, "fixture"))
-
-    def test_rejects_catalog_version_in_legacy_record(self) -> None:
-        record = self.record()
-        record["catalogVersion"] = 2
-
-        with self.assertRaisesRegex(SystemExit, "must not contain catalogVersion"):
-            VALIDATOR.validate_legacy_record(record, "fixture")
-
-    def test_rejects_reordered_legacy_inventory(self) -> None:
-        record = self.record()
-        record["files"].insert(
-            0,
-            {
-                "path": "z.json",
-                "objectPath": "objects/sha256/4" + "4" * 63,
-                "bytes": 1,
-                "sha256": "4" * 64,
-            },
-        )
-
-        with self.assertRaisesRegex(SystemExit, "file inventory is invalid"):
-            VALIDATOR.validate_legacy_record(record, "fixture")
-
-    def test_rejects_invalid_historical_source_provenance(self) -> None:
-        record = self.record()
-        record["historicalSource"]["path"] = "site/catalogs/test/v2"
-
-        with self.assertRaisesRegex(SystemExit, "source provenance is invalid"):
-            VALIDATOR.validate_legacy_record(record, "fixture")
-
-
 class TestCatalogReservation(unittest.TestCase):
     def test_accepts_strict_reserved_v3_without_a_release_tree(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -249,53 +185,233 @@ class TestCatalogReservation(unittest.TestCase):
         path.write_text(json.dumps(reservation), encoding="utf-8")
 
 
-class TestHistoricalCatalogSource(unittest.TestCase):
-    def test_current_flat_v2_bytes_match_the_recorded_historical_tree(self) -> None:
-        repository, site, record, git = self.fixture()
+class TestCurrentCatalogReleaseRecord(unittest.TestCase):
+    def feed(self) -> dict:
+        return {
+            "catalogVersion": 4,
+            "indexSha256": "1" * 64,
+            "signatureEnvelopeSha256": "2" * 64,
+            "keyId": "test-key",
+            "files": [
+                {
+                    "path": "catalog.json",
+                    "objectPath": "objects/sha256/3" + "3" * 63,
+                    "bytes": 1,
+                    "sha256": "3" * 64,
+                }
+            ],
+            "minimumAppVersionCode": 7,
+        }
 
-        VALIDATOR.verify_historical_source(site, record, git)
+    def record(self) -> dict:
+        return {
+            "schemaVersion": 3,
+            "catalogVersion": 4,
+            "canonicalPath": "catalog/v4",
+            "indexUrl": "https://thefunkybits.github.io/rgm/catalog/v4/index.json",
+            "indexSchemaVersion": 4,
+            "keyId": "test-key",
+            "indexSha256": "1" * 64,
+            "signatureEnvelopeSha256": "2" * 64,
+            "files": self.feed()["files"],
+            "minimumAppVersionCode": 7,
+            "catalogCandidateSha256": "4" * 64,
+            "contentCommit": "5" * 40,
+            "publisherCommit": "6" * 40,
+            "publicationCommit": "7" * 40,
+            "tagNames": {
+                "content": "catalog/v4-content",
+                "publisher": "catalog/v4-publisher",
+                "release": "catalog/v4",
+            },
+        }
 
-        self.assertTrue((repository / "site/catalog/v2/index.json").is_file())
+    def test_accepts_a_current_release_record_bound_to_the_signed_feed(self) -> None:
+        record = self.record()
 
-    def test_changed_current_flat_v2_bytes_are_rejected(self) -> None:
-        _, site, record, git = self.fixture()
-        (site / "catalog/v2/index.json").write_bytes(b"changed\n")
+        self.assertEqual(
+            record,
+            VALIDATOR.validate_current_release_record(record, self.feed(), "fixture"),
+        )
 
-        with self.assertRaisesRegex(SystemExit, "historical source bytes differ"):
-            VALIDATOR.verify_historical_source(site, record, git)
+    def test_rejects_release_record_hash_drift(self) -> None:
+        record = self.record()
+        record["indexSha256"] = "f" * 64
 
-    def fixture(self) -> tuple[Path, Path, dict, str]:
+        with self.assertRaisesRegex(SystemExit, "differs from signed feed"):
+            VALIDATOR.validate_current_release_record(record, self.feed(), "fixture")
+
+
+class TestCurrentCatalogFeed(unittest.TestCase):
+    def test_accepts_a_current_signed_feed_with_exact_object_inventory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            site = Path(temporary) / "site"
+            self.write_feed(site)
+
+            with mock.patch.object(VALIDATOR, "verify_signature"):
+                feed = VALIDATOR.validate_current_release_feed(
+                    site,
+                    "catalog/v4",
+                    4,
+                    "openssl",
+                    {"test-key": b"k" * 32},
+                )
+
+            self.assertEqual(4, feed["catalogVersion"])
+            self.assertEqual("test-key", feed["keyId"])
+            self.assertEqual(1, len(feed["files"]))
+
+    def test_rejects_unreferenced_current_feed_object(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            site = Path(temporary) / "site"
+            feed_root = self.write_feed(site)
+            (feed_root / "objects/sha256/unreferenced").write_bytes(b"extra")
+
+            with mock.patch.object(VALIDATOR, "verify_signature"):
+                with self.assertRaisesRegex(SystemExit, "object directory differs"):
+                    VALIDATOR.validate_current_release_feed(
+                        site,
+                        "catalog/v4",
+                        4,
+                        "openssl",
+                        {"test-key": b"k" * 32},
+                    )
+
+    @staticmethod
+    def write_feed(site: Path) -> Path:
+        feed_root = site / "catalog/v4"
+        payload = b"catalog"
+        digest = VALIDATOR.sha256(payload)
+        object_path = feed_root / f"objects/sha256/{digest}"
+        object_path.parent.mkdir(parents=True)
+        object_path.write_bytes(payload)
+        index = {
+            "schemaVersion": 4,
+            "catalogVersion": 4,
+            "minimumAppVersionCode": 7,
+            "files": [
+                {
+                    "path": "catalog.json",
+                    "objectPath": f"objects/sha256/{digest}",
+                    "bytes": len(payload),
+                    "sha256": digest,
+                }
+            ],
+        }
+        index_path = feed_root / "index.json"
+        index_path.write_text(json.dumps(index), encoding="utf-8")
+        envelope = {
+            "schemaVersion": 2,
+            "manifestSha256": VALIDATOR.sha256(index_path.read_bytes()),
+            "signatures": [
+                {"algorithm": "ed25519", "keyId": "test-key", "value": "A" * 86}
+            ],
+        }
+        (feed_root / "index.signatures.json").write_text(json.dumps(envelope), encoding="utf-8")
+        return feed_root
+
+
+class TestCurrentCatalogDeploymentReceipt(unittest.TestCase):
+    def record(self) -> dict:
+        return {
+            "catalogVersion": 4,
+            "files": [
+                {
+                    "path": "catalog.json",
+                    "objectPath": "objects/sha256/1" + "1" * 63,
+                    "bytes": 1,
+                    "sha256": "1" * 64,
+                }
+            ],
+        }
+
+    def receipt(self, release_record_sha256: str) -> dict:
+        return {
+            "schemaVersion": 2,
+            "catalogVersion": 4,
+            "releaseRecordSha256": release_record_sha256,
+            "sourceCommit": "2" * 40,
+            "site": {
+                "repository": "https://github.com/TheFunkyBits/rgm",
+                "pagesUrl": "https://thefunkybits.github.io/rgm/",
+                "workflowRunId": 1,
+                "workflowUrl": "https://github.com/TheFunkyBits/rgm/actions/runs/1",
+                "createdAt": "2026-09-18T00:00:00Z",
+                "completedAt": "2026-09-18T00:01:00Z",
+                "conclusion": "success",
+                "servedFileCount": 3,
+                "byteEqualityVerified": True,
+            },
+        }
+
+    def test_accepts_a_receipt_bound_to_current_release_record_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            record_path = Path(temporary) / "v4.json"
+            record_path.write_text(json.dumps(self.record()), encoding="utf-8")
+            receipt = self.receipt(VALIDATOR.sha256(record_path.read_bytes()))
+
+            self.assertEqual(
+                receipt,
+                VALIDATOR.validate_current_deployment_receipt(
+                    receipt,
+                    record_path,
+                    self.record(),
+                    "fixture",
+                ),
+            )
+
+    def test_rejects_a_receipt_with_release_record_hash_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            record_path = Path(temporary) / "v4.json"
+            record_path.write_text(json.dumps(self.record()), encoding="utf-8")
+            receipt = self.receipt("f" * 64)
+
+            with self.assertRaisesRegex(SystemExit, "release record hash differs"):
+                VALIDATOR.validate_current_deployment_receipt(
+                    receipt,
+                    record_path,
+                    self.record(),
+                    "fixture",
+                )
+
+
+class TestCurrentCatalogDeploymentSource(unittest.TestCase):
+    def test_accepts_current_release_bytes_matching_the_receipt_source_commit(self) -> None:
+        repository, site, record_path, record, receipt, git = self.fixture()
+
+        VALIDATOR.verify_current_deployment_source(site, record_path, record, receipt, git)
+
+    def test_rejects_current_release_bytes_that_drift_from_the_receipt_source_commit(self) -> None:
+        repository, site, record_path, record, receipt, git = self.fixture()
+        (site / "catalog/v4/index.json").write_bytes(b"changed\n")
+
+        with self.assertRaisesRegex(SystemExit, "source bytes differ"):
+            VALIDATOR.verify_current_deployment_source(site, record_path, record, receipt, git)
+
+    def fixture(self) -> tuple[Path, Path, Path, dict, dict, str]:
         temporary = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.addCleanup(temporary.cleanup)
         repository = Path(temporary.name)
+        site = repository / "site"
+        record_path = repository / "catalog-releases/v4.json"
+        record = {"catalogVersion": 4, "canonicalPath": "catalog/v4"}
+        record_path.parent.mkdir(parents=True)
+        record_path.write_text(json.dumps(record), encoding="utf-8")
+        catalog_root = site / "catalog/v4/objects/sha256"
+        catalog_root.mkdir(parents=True)
+        (site / "catalog/v4/index.json").write_bytes(b"index\n")
+        (site / "catalog/v4/index.signatures.json").write_bytes(b"signature\n")
+        (catalog_root / "object").write_bytes(b"object\n")
         git = shutil.which("git")
         self.assertIsNotNone(git)
-        source = repository / "site/catalogs/v2/test"
-        source.mkdir(parents=True)
-        (source / "index.json").write_bytes(b"index\n")
-        (source / "objects/sha256").mkdir(parents=True)
-        (source / "objects/sha256/object").write_bytes(b"object\n")
         self.git(repository, git, "init")
         self.git(repository, git, "config", "user.name", "RGM Test")
         self.git(repository, git, "config", "user.email", "rgm-test@example.invalid")
         self.git(repository, git, "add", ".")
-        self.git(repository, git, "commit", "-m", "historical v2")
-        commit = self.git(repository, git, "rev-parse", "HEAD")
-        tree = self.git(repository, git, "rev-parse", f"{commit}:site/catalogs/v2/test")
-        shutil.copytree(source, repository / "site/catalog/v2")
-        return (
-            repository,
-            repository / "site",
-            {
-                "catalogPath": "catalog/v2",
-                "historicalSource": {
-                    "commit": commit,
-                    "path": "site/catalogs/v2/test",
-                    "tree": tree,
-                },
-            },
-            git,
-        )
+        self.git(repository, git, "commit", "-m", "current release")
+        source_commit = self.git(repository, git, "rev-parse", "HEAD")
+        receipt = {"sourceCommit": source_commit}
+        return repository, site, record_path, record, receipt, git
 
     def git(self, repository: Path, git: str, *arguments: str) -> str:
         result = subprocess.run(
@@ -305,6 +421,70 @@ class TestHistoricalCatalogSource(unittest.TestCase):
         )
         self.assertEqual(0, result.returncode, result.stderr.decode(errors="replace"))
         return result.stdout.decode().strip()
+
+
+class TestRetiredCatalogAbsence(unittest.TestCase):
+    def test_accepts_no_current_material_for_a_retired_catalog(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary)
+            site = repository / "site"
+
+            VALIDATOR.validate_retired_catalog_absence(repository, site, 7)
+
+    def test_rejects_a_retired_catalog_tree_remaining_in_the_current_site(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary)
+            site = repository / "site"
+            (site / "catalog/v7").mkdir(parents=True)
+
+            with self.assertRaisesRegex(SystemExit, "retired catalog v7 remains"):
+                VALIDATOR.validate_retired_catalog_absence(repository, site, 7)
+
+
+class TestDeprecationRecordBinding(unittest.TestCase):
+    def test_accepts_a_deprecation_event_bound_to_exact_record_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary)
+            record_path = repository / "catalog-releases/v7.json"
+            record_path.parent.mkdir(parents=True)
+            record_path.write_bytes(b"record\n")
+            self.write_event(repository, hashlib.sha256(record_path.read_bytes()).hexdigest())
+
+            VALIDATOR.validate_deprecation_record_binding(repository, 7, record_path)
+
+    def test_rejects_a_deprecation_event_with_record_hash_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary)
+            record_path = repository / "catalog-releases/v7.json"
+            record_path.parent.mkdir(parents=True)
+            record_path.write_bytes(b"record\n")
+            self.write_event(repository, "f" * 64)
+
+            with self.assertRaisesRegex(SystemExit, "record hash differs"):
+                VALIDATOR.validate_deprecation_record_binding(repository, 7, record_path)
+
+    @staticmethod
+    def write_event(repository: Path, release_record_sha256: str) -> None:
+        event = {
+            "schemaVersion": 1,
+            "eventSequence": 1,
+            "state": "DEPRECATED",
+            "catalogVersion": 7,
+            "canonicalPath": "catalog/v7",
+            "releaseRecordSha256": release_record_sha256,
+            "predecessorEventSha256": None,
+            "successorCatalogVersion": 8,
+            "successorCanonicalPath": "catalog/v8",
+            "announcedAt": "2026-09-18T00:00:00Z",
+            "removalNotBefore": "2026-10-18T00:00:00Z",
+            "supportedClientCutoff": "8+",
+            "rationale": "fixture",
+            "sourceCommit": "a" * 40,
+            "publicationReceiptSha256": None,
+        }
+        path = repository / "catalog-lifecycle/v7/events/0001-deprecated.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(event), encoding="utf-8")
 
 
 if __name__ == "__main__":

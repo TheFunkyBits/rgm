@@ -80,8 +80,7 @@ def promote_external_catalog(
     catalog_root = publication_root / CATALOG_ROOT
     release_root = publication_root / RELEASE_ROOT
 
-    lock_path = _git_lock_path(publication_root, git, runner)
-    with _exclusive_lock(lock_path, "catalog promotion"):
+    with publication_lock(publication_root, git, runner=runner):
         _recover_transactions(catalog_root, release_root, replace)
         _require_clean_publication(publication_root, git, runner)
         actual_commit = _git_text(git, publication_root, ["rev-parse", "HEAD"], runner).strip()
@@ -564,6 +563,19 @@ def _git_lock_path(publication_root: Path, git: Path, runner: ProcessRunner) -> 
     path = Path(source)
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
+
+
+@contextmanager
+def publication_lock(
+    publication_root: Path,
+    git: Path,
+    *,
+    runner: ProcessRunner | None = None,
+) -> Iterator[None]:
+    active_runner = runner or _run_process
+    lock_path = _git_lock_path(publication_root, git, active_runner)
+    with _exclusive_lock(lock_path, "catalog publication"):
+        yield
 
 
 def _git_text(git: Path, root: Path, arguments: list[str], runner: ProcessRunner) -> str:

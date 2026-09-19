@@ -386,12 +386,12 @@ def require_final_public_origin(roots: dict[str, RepositoryRoot]) -> None:
 
 def validate_current_tree(
     workspace_root: Path,
-    allowlist_path: Path,
+    allowlist_path: Path | None = None,
     require_final_origin: bool = False,
 ) -> dict[str, object]:
     workspace, roots_list = canonical_roots(workspace_root)
     roots = {root.name: root for root in roots_list}
-    allowlist = read_allowlist(allowlist_path, roots)
+    allowlist = read_allowlist(allowlist_path, roots) if allowlist_path is not None else {}
     findings: list[str] = []
     used_entries: set[tuple[str, str]] = set()
     files = 0
@@ -427,9 +427,7 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument(
         "--allowlist",
         type=Path,
-        default=Path(__file__).resolve().parents[1]
-        / "catalog-history"
-        / "retired-content-allowlist.json",
+        help="optional external historical-record allowlist",
     )
     parser.add_argument("--require-final-public-origin", action="store_true")
     parsed = parser.parse_args(arguments)

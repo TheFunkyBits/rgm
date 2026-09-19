@@ -128,6 +128,12 @@ class ValidateCurrentTreeTest(unittest.TestCase):
         self.assertEqual(6, len(result["repositories"]))
         self.assertEqual(0, result["historicalEntries"])
 
+    def test_accepts_a_clean_canonical_layout_without_an_allowlist(self) -> None:
+        result = VALIDATOR.validate_current_tree(workspace_root=self.fixture.workspace)
+
+        self.assertTrue(result["valid"])
+        self.assertEqual(0, result["historicalEntries"])
+
     def test_rejects_retired_host_bytes_in_an_untracked_file(self) -> None:
         (self.fixture.repository("rgm-client") / ".pending").write_text(
             retired_host_value(),

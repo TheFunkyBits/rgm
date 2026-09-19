@@ -19,9 +19,9 @@ python -m scripts.rgm_publication_tools promote-external-catalog --stage-directo
 
 The site contains no analytics, tracking scripts, forms, iframes, or remote media.
 
-Current immutable release identities are recorded at `catalog-releases/vN.json`. Historical
-catalog evidence is retained under `catalog-history/`; retired root records are recoverable from
-the external cutover history index and are not current release inputs.
+Current immutable release identities are recorded at `catalog-releases/vN.json`. A retired
+catalog's final served state is retained only by its reachable Git commits and annotated retirement
+tags; release-specific history files are not current release inputs.
 
 After a source record and catalog tree are committed and successfully deployed, a separate
 `deployment-receipts/vN.json` records the deployed source commit, Pages workflow, and direct

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rgm.example/schemas/catalog-lifecycle/1/event.schema.json",
+  "title": "RGM catalog lifecycle event",
+  "description": "An append-only catalog retirement lifecycle event.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "eventSequence",
+    "state",
+    "catalogVersion",
+    "canonicalPath",
+    "releaseRecordSha256",
+    "predecessorEventSha256",
+    "successorCatalogVersion",
+    "successorCanonicalPath",
+    "announcedAt",
+    "removalNotBefore",
+    "supportedClientCutoff",
+    "rationale",
+    "sourceCommit",
+    "publicationReceiptSha256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "eventSequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "state": {
+      "enum": ["DEPRECATED", "REMOVED_TO_GIT_HISTORY"]
+    },
+    "catalogVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "canonicalPath": {
+      "type": "string",
+      "pattern": "^catalog/v[1-9][0-9]*$"
+    },
+    "releaseRecordSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "predecessorEventSha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "successorCatalogVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "successorCanonicalPath": {
+      "type": "string",
+      "pattern": "^catalog/v[1-9][0-9]*$"
+    },
+    "announcedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "removalNotBefore": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "supportedClientCutoff": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceCommit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "publicationReceiptSha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

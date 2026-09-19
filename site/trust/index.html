@@ -25,11 +25,6 @@
     </dl>
     <p><a href="catalog-keys.json">Download the machine-readable public-key document</a>.</p>
 
-    <h2>Historical catalog</h2>
-    <ul class="link-list">
-      <li><a href="/rgm/catalog/v2/index.json"><span><code>v2</code></span><small>Legacy schema 2 MOO1 compatibility archive</small></a></li>
-    </ul>
-
     <h2>Verification policy</h2>
     <ol>
       <li>Require the exact public HTTPS URL bound into the app.</li>
@@ -41,7 +36,7 @@
       <li>Activate a complete generation atomically; retain the last verified generation on failure.</li>
     </ol>
 
-    <p>The historical endpoint above is retained as evidence. Current application releases accept only their exact bound catalog version.</p>
+    <p>Current application releases accept only their exact bound catalog version. Retired release audit remains in reachable Git history and is not served by this site.</p>
 
     <h2>Key rotation</h2>
     <p>A client update may pin an old and a new public key concurrently. Feeds are then signed by both keys before a later client update removes the retired key. Private keys are kept outside source repositories and publication output.</p>

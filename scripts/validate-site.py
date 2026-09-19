@@ -2,6 +2,7 @@
 
 import argparse
 import base64
+from datetime import datetime
 import hashlib
 import json
 import os
@@ -12,27 +13,24 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 
+try:
+    from catalog_lifecycle import scan_catalog_inventory
+except ModuleNotFoundError:
+    from scripts.catalog_lifecycle import scan_catalog_inventory
+
 REQUIRED = (
     "index.html",
     "privacy/index.html",
     "trust/catalog-keys.json",
-    "spec/catalog-v2/index.schema.json",
     "spec/catalog-v4/index.schema.json",
     "spec/catalog-v4/signatures.schema.json",
     "spec/catalog-v4/binding.schema.json",
-    "catalog/v2/index.json",
-    "catalog/v2/index.signatures.json",
+    "catalog/v4/index.json",
+    "catalog/v4/index.signatures.json",
 )
-HISTORICAL_RECORDS = (
-    "catalog-history/v2.json",
-)
-RESERVED_CATALOG_VERSIONS = (3,)
-HISTORICAL_V2_SOURCE_PATH = "site/catalogs/v2/test"
 SITE_BASE_URL = "https://thefunkybits.github.io/rgm/"
 SITE_BASE_PATH = "/rgm/"
 SCHEMA_IDS = {
-    "spec/catalog-v2/index.schema.json": f"{SITE_BASE_URL}spec/catalog-v2/index.schema.json",
-    "spec/catalog-v2/signatures.schema.json": f"{SITE_BASE_URL}spec/catalog-v2/signatures.schema.json",
     "spec/catalog-v4/index.schema.json": f"{SITE_BASE_URL}spec/catalog-v4/index.schema.json",
     "spec/catalog-v4/signatures.schema.json": f"{SITE_BASE_URL}spec/catalog-v4/signatures.schema.json",
     "spec/catalog-v4/binding.schema.json": f"{SITE_BASE_URL}spec/catalog-v4/binding.schema.json",
@@ -163,10 +161,10 @@ def validate_test_catalog(payloads: dict[str, bytes]) -> None:
         fail("test: MOO1 media differs from the approved cover and gallery order")
 
 
-def validate_feed(
+def validate_current_release_feed(
     site: Path,
     relative_path: str,
-    catalog_id: str,
+    catalog_version: int,
     openssl: str,
     keys: dict[str, bytes],
 ) -> dict:
@@ -178,66 +176,81 @@ def validate_feed(
     envelope = read_json(envelope_path)
     digest = sha256(index_bytes)
 
-    if index.get("schemaVersion") != 2:
-        fail(f"{relative_path}: index schema is not 2")
-    if envelope.get("schemaVersion") != 1:
-        fail(f"{relative_path}: signature schema is not 1")
-    if index.get("catalogId") != catalog_id:
-        fail(f"{relative_path}: catalog identity is invalid")
-    if index.get("catalogId") != envelope.get("catalogId"):
-        fail(f"{relative_path}: index and signature identities differ")
-    if digest != envelope.get("manifestSha256"):
-        fail(f"{relative_path}: index digest differs from signature envelope")
+    if set(index) != {"schemaVersion", "catalogVersion", "minimumAppVersionCode", "files"}:
+        fail(f"{relative_path}: current index fields are invalid")
+    if set(envelope) != {"schemaVersion", "manifestSha256", "signatures"}:
+        fail(f"{relative_path}: current signature envelope fields are invalid")
+    if (
+        index["schemaVersion"] != 4
+        or index["catalogVersion"] != catalog_version
+        or type(index["minimumAppVersionCode"]) is not int
+        or index["minimumAppVersionCode"] <= 0
+    ):
+        fail(f"{relative_path}: current index identity is invalid")
+    if envelope["schemaVersion"] != 2 or envelope["manifestSha256"] != digest:
+        fail(f"{relative_path}: current signature envelope identity is invalid")
 
     verified_key_id = None
-    for signature in envelope.get("signatures", []):
-        if signature.get("algorithm") != "ed25519":
+    signatures = envelope["signatures"]
+    if not isinstance(signatures, list):
+        fail(f"{relative_path}: current signatures are invalid")
+    for signature in signatures:
+        if not isinstance(signature, dict) or signature.get("algorithm") != "ed25519":
             continue
-        public_key = keys.get(signature.get("keyId"))
-        if public_key is None:
+        key_id = signature.get("keyId")
+        value = signature.get("value")
+        public_key = keys.get(key_id)
+        if public_key is None or not isinstance(value, str):
             continue
-        verify_signature(openssl, public_key, index_path, base64url(signature["value"]))
-        verified_key_id = signature["keyId"]
-        break
+        verify_signature(openssl, public_key, index_path, base64url(value))
+        if verified_key_id is not None:
+            fail(f"{relative_path}: current feed has multiple trusted signatures")
+        verified_key_id = key_id
     if verified_key_id is None:
-        fail(f"{relative_path}: no signature uses a published trusted key")
+        fail(f"{relative_path}: current feed has no signature using a published trusted key")
 
-    files = index.get("files", [])
-    paths = [record.get("path") for record in files]
-    if not files or paths != sorted(paths) or len(paths) != len(set(paths)):
-        fail(f"{relative_path}: logical path inventory is empty, unsorted, or duplicated")
-
+    files = index["files"]
+    if not isinstance(files, list) or not files:
+        fail(f"{relative_path}: current file inventory is invalid")
+    paths = []
     referenced_objects = set()
-    payloads = {}
-    for record in files:
-        logical_path = record.get("path")
-        object_path = record.get("objectPath", "")
-        expected_hash = record.get("sha256", "")
-        if object_path != f"objects/sha256/{expected_hash}":
-            fail(f"{relative_path}: object path is not content-addressed for {logical_path}")
+    for position, record in enumerate(files):
+        if not isinstance(record, dict) or set(record) != {"path", "objectPath", "bytes", "sha256"}:
+            fail(f"{relative_path}: current file {position} fields are invalid")
+        logical_path = record["path"]
+        object_path = record["objectPath"]
+        expected_hash = record["sha256"]
+        expected_size = record["bytes"]
+        if (
+            not isinstance(logical_path, str)
+            or not logical_path
+            or not isinstance(object_path, str)
+            or not isinstance(expected_hash, str)
+            or not SHA256.fullmatch(expected_hash)
+            or object_path != f"objects/sha256/{expected_hash}"
+            or type(expected_size) is not int
+            or expected_size <= 0
+        ):
+            fail(f"{relative_path}: current file {position} is invalid")
         object_file = feed / object_path
         if not object_file.is_file():
             fail(f"{relative_path}: missing {object_path}")
         data = object_file.read_bytes()
-        if len(data) != record.get("bytes") or sha256(data) != expected_hash:
+        if len(data) != expected_size or sha256(data) != expected_hash:
             fail(f"{relative_path}: object size or hash differs for {logical_path}")
+        paths.append(logical_path)
         referenced_objects.add(object_file.resolve())
-        payloads[logical_path] = data
-
-    if catalog_id == "test":
-        validate_test_catalog(payloads)
+    if paths != sorted(set(paths)):
+        fail(f"{relative_path}: current file inventory is unsorted or duplicated")
 
     object_root = feed / "objects" / "sha256"
+    if not object_root.is_dir():
+        fail(f"{relative_path}: current object directory is missing")
     actual_objects = {path.resolve() for path in object_root.iterdir() if path.is_file()}
     if actual_objects != referenced_objects:
-        fail(f"{relative_path}: object directory differs from signed inventory")
-
-    print(
-        f"verified {relative_path}: revision={index['revision']} "
-        f"index={digest} objects={len(files)}"
-    )
+        fail(f"{relative_path}: current object directory differs from signed inventory")
     return {
-        "legacyRevision": index["revision"],
+        "catalogVersion": catalog_version,
         "indexSha256": digest,
         "signatureEnvelopeSha256": sha256(envelope_path.read_bytes()),
         "keyId": verified_key_id,
@@ -246,86 +259,120 @@ def validate_feed(
     }
 
 
-def validate_legacy_record(record: object, label: str) -> dict:
+def validate_current_release_record(record: object, feed: dict, label: str) -> dict:
     if not isinstance(record, dict):
-        fail(f"{label}: legacy record is not an object")
-    if "catalogVersion" in record:
-        fail(f"{label}: legacy record must not contain catalogVersion")
+        fail(f"{label}: current release record is not an object")
     expected = {
         "schemaVersion",
-        "kind",
-        "legacyCatalogId",
-        "legacyRevision",
-        "catalogPath",
+        "catalogVersion",
+        "canonicalPath",
+        "indexUrl",
         "indexSchemaVersion",
         "keyId",
         "indexSha256",
         "signatureEnvelopeSha256",
         "files",
         "minimumAppVersionCode",
+        "catalogCandidateSha256",
         "contentCommit",
         "publisherCommit",
         "publicationCommit",
-        "historicalSource",
+        "tagNames",
     }
     if set(record) != expected:
-        fail(f"{label}: legacy record fields are invalid")
-    if record["schemaVersion"] != 2 or record["kind"] != "legacy-catalog-evidence":
-        fail(f"{label}: legacy record identity is invalid")
-    if record["legacyCatalogId"] != "test":
-        fail(f"{label}: legacy record catalog id is invalid")
-    if type(record["legacyRevision"]) is not int or record["legacyRevision"] <= 0:
-        fail(f"{label}: legacy record revision is invalid")
-    catalog_path = record["catalogPath"]
-    if catalog_path != "catalog/v2":
-        fail(f"{label}: legacy record canonical path is invalid")
-    if record["indexSchemaVersion"] != 2:
-        fail(f"{label}: legacy record index schema is invalid")
+        fail(f"{label}: current release record fields are invalid")
+    catalog_version = feed["catalogVersion"]
+    if (
+        record["schemaVersion"] != 3
+        or record["catalogVersion"] != catalog_version
+        or record["canonicalPath"] != f"catalog/v{catalog_version}"
+        or record["indexUrl"] != f"{SITE_BASE_URL}catalog/v{catalog_version}/index.json"
+        or record["indexSchemaVersion"] != 4
+    ):
+        fail(f"{label}: current release record identity is invalid")
     if not isinstance(record["keyId"], str) or not KEY_ID.fullmatch(record["keyId"]):
-        fail(f"{label}: legacy record key id is invalid")
-    for field in ("indexSha256", "signatureEnvelopeSha256"):
+        fail(f"{label}: current release record key id is invalid")
+    for field in ("indexSha256", "signatureEnvelopeSha256", "catalogCandidateSha256"):
         if not isinstance(record[field], str) or not SHA256.fullmatch(record[field]):
-            fail(f"{label}: legacy record {field} is invalid")
+            fail(f"{label}: current release record {field} is invalid")
     for field in ("contentCommit", "publisherCommit", "publicationCommit"):
         if not isinstance(record[field], str) or not GIT_SHA.fullmatch(record[field]):
-            fail(f"{label}: legacy record {field} is invalid")
-    historical_source = record["historicalSource"]
+            fail(f"{label}: current release record {field} is invalid")
     if (
-        not isinstance(historical_source, dict)
-        or set(historical_source) != {"commit", "path", "tree"}
-        or historical_source["commit"] != record["publicationCommit"]
-        or historical_source["path"] != HISTORICAL_V2_SOURCE_PATH
-        or not isinstance(historical_source["tree"], str)
-        or not GIT_SHA.fullmatch(historical_source["tree"])
+        record["keyId"] != feed["keyId"]
+        or record["indexSha256"] != feed["indexSha256"]
+        or record["signatureEnvelopeSha256"] != feed["signatureEnvelopeSha256"]
+        or record["files"] != feed["files"]
+        or record["minimumAppVersionCode"] != feed["minimumAppVersionCode"]
     ):
-        fail(f"{label}: legacy source provenance is invalid")
-    if type(record["minimumAppVersionCode"]) is not int or record["minimumAppVersionCode"] <= 0:
-        fail(f"{label}: legacy record compatibility is invalid")
-    files = record["files"]
-    if not isinstance(files, list) or not files:
-        fail(f"{label}: legacy record files are invalid")
-    paths = []
-    for position, entry in enumerate(files):
-        if not isinstance(entry, dict) or set(entry) != {"path", "objectPath", "bytes", "sha256"}:
-            fail(f"{label}: legacy record file {position} is invalid")
-        path = entry["path"]
-        object_path = entry["objectPath"]
-        digest = entry["sha256"]
-        if (
-            not isinstance(path, str)
-            or not path
-            or not isinstance(object_path, str)
-            or object_path != f"objects/sha256/{digest}"
-            or type(entry["bytes"]) is not int
-            or entry["bytes"] <= 0
-            or not isinstance(digest, str)
-            or not SHA256.fullmatch(digest)
-        ):
-            fail(f"{label}: legacy record file {position} is invalid")
-        paths.append(path)
-    if paths != sorted(set(paths)):
-        fail(f"{label}: legacy record file inventory is invalid")
+        fail(f"{label}: current release record differs from signed feed")
+    expected_tags = {
+        "content": f"catalog/v{catalog_version}-content",
+        "publisher": f"catalog/v{catalog_version}-publisher",
+        "release": f"catalog/v{catalog_version}",
+    }
+    if record["tagNames"] != expected_tags:
+        fail(f"{label}: current release record tag names are invalid")
     return record
+
+
+def validate_current_deployment_receipt(
+    receipt: object,
+    release_record_path: Path,
+    record: dict,
+    label: str,
+) -> dict:
+    if not isinstance(receipt, dict):
+        fail(f"{label}: current deployment receipt is not an object")
+    expected = {"schemaVersion", "catalogVersion", "releaseRecordSha256", "sourceCommit", "site"}
+    if set(receipt) != expected:
+        fail(f"{label}: current deployment receipt fields are invalid")
+    if receipt["schemaVersion"] != 2 or receipt["catalogVersion"] != record["catalogVersion"]:
+        fail(f"{label}: current deployment receipt identity is invalid")
+    if receipt["releaseRecordSha256"] != sha256(release_record_path.read_bytes()):
+        fail(f"{label}: current deployment receipt release record hash differs")
+    if not isinstance(receipt["sourceCommit"], str) or not GIT_SHA.fullmatch(receipt["sourceCommit"]):
+        fail(f"{label}: current deployment receipt source commit is invalid")
+    site = receipt["site"]
+    expected_site = {
+        "repository",
+        "pagesUrl",
+        "workflowRunId",
+        "workflowUrl",
+        "createdAt",
+        "completedAt",
+        "conclusion",
+        "servedFileCount",
+        "byteEqualityVerified",
+    }
+    if not isinstance(site, dict) or set(site) != expected_site:
+        fail(f"{label}: current deployment site receipt fields are invalid")
+    workflow_run_id = site["workflowRunId"]
+    if (
+        site["repository"] != "https://github.com/TheFunkyBits/rgm"
+        or site["pagesUrl"] != SITE_BASE_URL
+        or type(workflow_run_id) is not int
+        or workflow_run_id <= 0
+        or site["workflowUrl"] != f"https://github.com/TheFunkyBits/rgm/actions/runs/{workflow_run_id}"
+        or site["conclusion"] != "success"
+        or site["servedFileCount"] != len(record["files"]) + 2
+        or site["byteEqualityVerified"] is not True
+    ):
+        fail(f"{label}: current deployment site receipt is invalid")
+    created_at = _parse_utc_instant(site["createdAt"], label, "created time")
+    completed_at = _parse_utc_instant(site["completedAt"], label, "completed time")
+    if completed_at < created_at:
+        fail(f"{label}: current deployment site receipt times are invalid")
+    return receipt
+
+
+def _parse_utc_instant(value: object, label: str, field: str) -> datetime:
+    if not isinstance(value, str) or not value.endswith("Z"):
+        fail(f"{label}: current deployment {field} is invalid")
+    try:
+        return datetime.fromisoformat(value.removesuffix("Z") + "+00:00")
+    except ValueError as error:
+        fail(f"{label}: current deployment {field} is invalid: {error}")
 
 
 def validate_catalog_reservation(repository: Path, catalog_version: int) -> dict:
@@ -364,48 +411,109 @@ def validate_catalog_reservation(repository: Path, catalog_version: int) -> dict
     return reservation
 
 
-def verify_historical_source(site: Path, record: dict, git: str) -> None:
-    source = record["historicalSource"]
+def validate_retired_catalog_absence(repository: Path, site: Path, catalog_version: int) -> None:
+    current_paths = (
+        site / "catalog" / f"v{catalog_version}",
+        site / "spec" / f"catalog-v{catalog_version}",
+        repository / "catalog-history" / f"v{catalog_version}.json",
+        repository / "catalog-lifecycle" / f"v{catalog_version}",
+        repository / "catalog-releases" / f"v{catalog_version}.json",
+        repository / "catalog-requests" / f"v{catalog_version}.json",
+    )
+    for path in current_paths:
+        if path.exists() or path.is_symlink():
+            fail(
+                f"retired catalog v{catalog_version} remains in current tree: "
+                f"{path.relative_to(repository).as_posix()}"
+            )
+
+
+def find_current_catalog_record(repository: Path, catalog_version: int) -> Path | None:
+    candidates = []
+    for directory in ("catalog-releases", "catalog-history"):
+        path = repository / directory / f"v{catalog_version}.json"
+        if path.exists() or path.is_symlink():
+            if path.is_symlink() or not path.is_file():
+                fail(f"catalog v{catalog_version} record is invalid: {path}")
+            candidates.append(path)
+    if len(candidates) > 1:
+        fail(f"catalog v{catalog_version} release/history records are ambiguous")
+    return candidates[0] if candidates else None
+
+
+def validate_deprecation_record_binding(
+    repository: Path,
+    catalog_version: int,
+    record_path: Path,
+) -> None:
+    events_root = repository / "catalog-lifecycle" / f"v{catalog_version}" / "events"
+    if not events_root.is_dir() or events_root.is_symlink():
+        fail(f"deprecated catalog v{catalog_version} lifecycle events are missing")
+    event_paths = sorted(events_root.glob("*.json"))
+    if not event_paths:
+        fail(f"deprecated catalog v{catalog_version} lifecycle events are missing")
+    expected_hash = sha256(record_path.read_bytes())
+    for event_path in event_paths:
+        event = read_json(event_path)
+        if event.get("releaseRecordSha256") != expected_hash:
+            fail(f"deprecated catalog v{catalog_version} lifecycle record hash differs")
+
+
+def verify_current_deployment_source(
+    site: Path,
+    release_record_path: Path,
+    record: dict,
+    receipt: dict,
+    git: str,
+) -> None:
     repository = site.parent
-    commit = source["commit"]
-    source_path = source["path"]
+    source_commit = receipt["sourceCommit"]
     ancestor = subprocess.run(
-        (git, "-C", str(repository), "merge-base", "--is-ancestor", commit, "HEAD"),
+        (git, "-C", str(repository), "merge-base", "--is-ancestor", source_commit, "HEAD"),
         capture_output=True,
         check=False,
     )
     if ancestor.returncode != 0:
-        fail(f"{record['catalogPath']}: historical source commit is not reachable")
-    tree = git_bytes(git, repository, ("rev-parse", f"{commit}:{source_path}"), record["catalogPath"])
-    if tree.decode("ascii").strip() != source["tree"]:
-        fail(f"{record['catalogPath']}: historical source tree differs from recorded provenance")
+        fail("current deployment source commit is not reachable")
+
+    record_relative = release_record_path.relative_to(repository).as_posix()
+    historical_record = git_bytes(
+        git,
+        repository,
+        ("show", f"{source_commit}:{record_relative}"),
+        "current deployment release record",
+    )
+    if historical_record != release_record_path.read_bytes():
+        fail("current deployment release record differs from source bytes")
+
+    source_path = f"site/{record['canonicalPath']}"
     listed = git_bytes(
         git,
         repository,
-        ("ls-tree", "-r", "--name-only", commit, "--", source_path),
-        record["catalogPath"],
+        ("ls-tree", "-r", "--name-only", source_commit, "--", source_path),
+        "current deployment catalog tree",
     ).decode("utf-8").splitlines()
     prefix = f"{source_path}/"
     if not listed or any(not path.startswith(prefix) for path in listed):
-        fail(f"{record['catalogPath']}: historical source inventory is invalid")
+        fail("current deployment catalog source inventory is invalid")
     historical_paths = [path.removeprefix(prefix) for path in listed]
-    current_root = site / record["catalogPath"]
+    current_root = site / record["canonicalPath"]
     current_paths = sorted(
         path.relative_to(current_root).as_posix()
         for path in current_root.rglob("*")
         if path.is_file()
     )
     if historical_paths != current_paths:
-        fail(f"{record['catalogPath']}: historical source inventory differs from current tree")
+        fail("current deployment catalog source inventory differs")
     for relative in historical_paths:
         historical_bytes = git_bytes(
             git,
             repository,
-            ("show", f"{commit}:{source_path}/{relative}"),
-            record["catalogPath"],
+            ("show", f"{source_commit}:{source_path}/{relative}"),
+            "current deployment catalog tree",
         )
         if historical_bytes != (current_root / relative).read_bytes():
-            fail(f"{record['catalogPath']}: historical source bytes differ for {relative}")
+            fail(f"current deployment catalog source bytes differ for {relative}")
 
 
 def git_bytes(git: str, repository: Path, arguments: tuple[str, ...], label: str) -> bytes:
@@ -415,33 +523,8 @@ def git_bytes(git: str, repository: Path, arguments: tuple[str, ...], label: str
         check=False,
     )
     if result.returncode != 0:
-        fail(f"{label}: historical source Git verification failed: {result.stderr.decode(errors='replace').strip()}")
+        fail(f"{label}: Git verification failed: {result.stderr.decode(errors='replace').strip()}")
     return result.stdout
-
-
-def validate_recorded_legacy_feed(
-    site: Path,
-    record: dict,
-    openssl: str,
-    keys: dict[str, bytes],
-) -> None:
-    result = validate_feed(
-        site,
-        record["catalogPath"],
-        record["legacyCatalogId"],
-        openssl,
-        keys,
-    )
-    for field in (
-        "legacyRevision",
-        "indexSha256",
-        "signatureEnvelopeSha256",
-        "keyId",
-        "files",
-        "minimumAppVersionCode",
-    ):
-        if record[field] != result[field]:
-            fail(f"{record['catalogPath']}: legacy record differs from catalog tree")
 
 
 def resolve_local_reference(site: Path, html: Path, reference: str) -> Path | None:
@@ -498,6 +581,42 @@ def validate_publication_identity(site: Path) -> None:
         fail("Published current catalog binding schema is invalid")
 
 
+def validate_current_catalog_release(
+    site: Path,
+    openssl: str,
+    git: str,
+    keys: dict[str, bytes],
+) -> dict:
+    catalog_version = 4
+    relative_path = f"catalog/v{catalog_version}"
+    feed = validate_current_release_feed(
+        site,
+        relative_path,
+        catalog_version,
+        openssl,
+        keys,
+    )
+    release_record_path = site.parent / "catalog-releases" / f"v{catalog_version}.json"
+    record = validate_current_release_record(
+        read_json(release_record_path),
+        feed,
+        release_record_path.relative_to(site.parent).as_posix(),
+    )
+    receipt_path = site.parent / "deployment-receipts" / f"v{catalog_version}.json"
+    receipt = validate_current_deployment_receipt(
+        read_json(receipt_path),
+        release_record_path,
+        record,
+        receipt_path.relative_to(site.parent).as_posix(),
+    )
+    verify_current_deployment_source(site, release_record_path, record, receipt, git)
+    print(
+        f"verified {relative_path}: version={catalog_version} "
+        f"index={feed['indexSha256']} objects={len(feed['files'])}"
+    )
+    return feed
+
+
 def validate_site(site: Path, openssl: str, git: str) -> None:
     if not site.is_dir():
         fail(f"Site root does not exist: {site}")
@@ -515,19 +634,22 @@ def validate_site(site: Path, openssl: str, git: str) -> None:
         fail("Published Ed25519 key is not 32 raw bytes")
 
     validate_publication_identity(site)
-    records = {
-        relative: validate_legacy_record(read_json(site.parent / relative), relative)
-        for relative in HISTORICAL_RECORDS
-    }
-    validate_recorded_legacy_feed(
-        site,
-        records["catalog-history/v2.json"],
-        openssl,
-        keys,
-    )
-    verify_historical_source(site, records["catalog-history/v2.json"], git)
-    for catalog_version in RESERVED_CATALOG_VERSIONS:
+    tag_names = git_bytes(git, site.parent, ("tag", "--list"), "catalog lifecycle").decode(
+        "utf-8"
+    ).splitlines()
+    inventory = scan_catalog_inventory(site.parent, tag_names=tag_names)
+    validate_current_catalog_release(site, openssl, git, keys)
+    for catalog_version in inventory.reserved_versions:
         validate_catalog_reservation(site.parent, catalog_version)
+    for catalog_version in (
+        inventory.pending_retirement_versions | inventory.retired_versions
+    ):
+        validate_retired_catalog_absence(site.parent, site, catalog_version)
+    for catalog_version in inventory.deprecated_versions:
+        record_path = find_current_catalog_record(site.parent, catalog_version)
+        if record_path is None:
+            fail(f"deprecated catalog v{catalog_version} has no current release material")
+        validate_deprecation_record_binding(site.parent, catalog_version, record_path)
 
     text_files = [
         path for path in site.rglob("*") if path.is_file() and path.suffix in {".html", ".json", ".css"}
